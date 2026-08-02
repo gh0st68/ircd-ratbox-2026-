@@ -55,6 +55,7 @@
 #include "reject.h"
 #include "s_conf.h"
 #include "s_newconf.h"
+#include "cloak.h"
 #include "cache.h"
 #include "dns.h"
 #include "bandbi.h"
@@ -681,6 +682,20 @@ ratbox_main(int argc, char *argv[])
 	init_ssld();
 
 	load_conf_settings();
+
+	/* Refuse to come up half-configured for cloaking. Starting anyway would
+	 * put every user online with their real host showing, which is the exact
+	 * opposite of what the admin asked for.
+	 */
+	if(cloak_is_broken())
+	{
+		fprintf(stderr,
+			"ERROR: cloaking is enabled but unusable - see the log for the reason.\n"
+			"Fix general::cloak_key / general::cloak_suffix, or set cloak_enabled = no.\n");
+		ilog(L_MAIN, "Exiting: cloaking enabled but unusable");
+		return 1;
+	}
+
 	if(ServerInfo.bandb_path == NULL)
 	        ServerInfo.bandb_path = rb_strdup(DBPATH);
 

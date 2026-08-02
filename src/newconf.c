@@ -38,6 +38,7 @@
 #include "s_log.h"
 #include "s_conf.h"
 #include "s_user.h"
+#include "cloak.h"
 #include "s_newconf.h"
 #include "hostmask.h"
 #include "send.h"
@@ -176,6 +177,7 @@ static struct mode_table auth_table[] = {
 	{"spambot_exempt",	CONF_FLAGS_EXEMPTSPAMBOT },
 	{"shide_exempt",	CONF_FLAGS_EXEMPTSHIDE	},
 	{"jupe_exempt",		CONF_FLAGS_EXEMPTJUPE	},
+	{"cloak_exempt",	CONF_FLAGS_EXEMPTCLOAK	},
 	{"resv_exempt",		CONF_FLAGS_EXEMPTRESV	},
 	{"no_tilde",		CONF_FLAGS_NO_TILDE	},
 	{"need_ident",		CONF_FLAGS_NEED_IDENTD	},
@@ -2272,6 +2274,7 @@ load_conf_settings(void)
 		splitchecking = 0;
 	}
 	check_class();
+	cloak_apply_config();
 }
 
 
@@ -2398,6 +2401,9 @@ static struct conf_items conf_general_table[] =
 	{ "default_operstring",	CF_QSTRING, NULL, REALLEN,    &ConfigFileEntry.default_operstring },
 	{ "default_adminstring",CF_QSTRING, NULL, REALLEN,    &ConfigFileEntry.default_adminstring },
 	{ "kline_reason",	CF_QSTRING, NULL, REALLEN, &ConfigFileEntry.kline_reason },
+	{ "cloak_enabled",	CF_YESNO,  NULL, 0,	    &ConfigFileEntry.cloak_enabled },
+	{ "cloak_key",		CF_QSTRING, NULL, REALLEN,  &ConfigFileEntry.cloak_key },
+	{ "cloak_suffix",	CF_QSTRING, NULL, HOSTLEN,  &ConfigFileEntry.cloak_suffix },
 
 	{ "anti_spam_exit_message_time", CF_TIME,  NULL, 0, &ConfigFileEntry.anti_spam_exit_message_time },
 	{ "disable_fake_channels",	 CF_YESNO, NULL, 0, &ConfigFileEntry.disable_fake_channels },

@@ -37,6 +37,7 @@
 #include "parse.h"
 #include "numeric.h"
 #include "s_conf.h"
+#include "cloak.h"
 #include "s_newconf.h"
 #include "s_log.h"
 #include "s_serv.h"
@@ -457,6 +458,19 @@ register_local_user(struct Client *client_p, struct Client *source_p, const char
 
 	if(IsAnyDead(client_p))
 		return CLIENT_EXITED;
+
+	/* Cloak last, once every check that wants the real host has had it.
+	 * K-lines and D-lines were matched above against the true address, so
+	 * existing bans keep working; find_kline() also tests sockhost, which we
+	 * leave alone, so IP and CIDR bans continue to match afterwards too.
+	 *
+	 * This has to happen before the hostname hash and before
+	 * introduce_client(), so that what the rest of the network learns is the
+	 * cloak and nothing else. An auth block carrying an explicit spoof, or
+	 * marked cloak_exempt, is left as the administrator configured it.
+	 */
+	if(!IsConfDoSpoofIp(aconf) && !IsConfExemptCloak(aconf))
+		cloak_client(source_p);
 
 	rb_inet_ntop_sock((struct sockaddr *)&source_p->localClient->ip, ipaddr, sizeof(ipaddr));
 

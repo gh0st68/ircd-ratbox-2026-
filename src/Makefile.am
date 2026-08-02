@@ -27,6 +27,7 @@ libcore_la_SOURCES =			\
 	channel.c			\
 	class.c				\
 	client.c			\
+	cloak.c				\
 	getopt.c			\
 	hash.c				\
 	hook.c				\

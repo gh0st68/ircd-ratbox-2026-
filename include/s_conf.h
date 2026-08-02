@@ -95,6 +95,7 @@ struct ConfItem
 #define CONF_FLAGS_TEMPORARY            0x00010000
 #define CONF_FLAGS_TB			0x00020000
 #define CONF_FLAGS_LOCKED		0x00040000
+#define CONF_FLAGS_EXEMPTCLOAK		0x00080000	/* never cloak these clients */
 
 /* Macros for struct ConfItem */
 #define IsConfBan(x)		((x)->status & (CONF_KILL|CONF_XLINE|CONF_DLINE|\
@@ -109,6 +110,7 @@ struct ConfItem
 #define IsConfExemptSpambot(x)	((x)->flags & CONF_FLAGS_EXEMPTSPAMBOT)
 #define IsConfExemptShide(x)	((x)->flags & CONF_FLAGS_EXEMPTSHIDE)
 #define IsConfExemptJupe(x)	((x)->flags & CONF_FLAGS_EXEMPTJUPE)
+#define IsConfExemptCloak(x)	((x)->flags & CONF_FLAGS_EXEMPTCLOAK)
 #define IsConfExemptResv(x)	((x)->flags & CONF_FLAGS_EXEMPTRESV)
 #define IsConfDoSpoofIp(x)      ((x)->flags & CONF_FLAGS_SPOOF_IP)
 #define IsConfSpoofNotice(x)    ((x)->flags & CONF_FLAGS_SPOOF_NOTICE)
@@ -128,6 +130,10 @@ struct config_file_entry
 	char *default_operstring;
 	char *default_adminstring;
 	char *kline_reason;
+
+	char *cloak_key;
+	char *cloak_suffix;
+	int cloak_enabled;
 
 	char *fname_userlog;
 	char *fname_fuserlog;

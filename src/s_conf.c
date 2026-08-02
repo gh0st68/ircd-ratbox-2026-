@@ -741,6 +741,13 @@ set_default_conf(void)
 	ConfigFileEntry.default_operstring = rb_strdup("is an IRC operator");
 	ConfigFileEntry.default_adminstring = rb_strdup("is a Server Administrator");
 
+	/* Cloaking stays off unless it is asked for: switching it on silently
+	 * would rewrite every host on an existing network.
+	 */
+	ConfigFileEntry.cloak_enabled = NO;
+	ConfigFileEntry.cloak_key = NULL;
+	ConfigFileEntry.cloak_suffix = rb_strdup("cloak");
+
 	ConfigFileEntry.failed_oper_notice = YES;
 	ConfigFileEntry.anti_nick_flood = NO;
 	ConfigFileEntry.disable_fake_channels = NO;
@@ -1235,6 +1242,8 @@ clear_out_old_conf(void)
 
 	/* clean out general */
 	free_null(ConfigFileEntry.kline_reason);
+	free_null(ConfigFileEntry.cloak_key);
+	free_null(ConfigFileEntry.cloak_suffix);
 
 #ifdef ENABLE_SERVICES
 	RB_DLINK_FOREACH_SAFE(ptr, next_ptr, service_list.head)

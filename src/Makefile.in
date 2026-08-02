@@ -94,7 +94,7 @@ am__installdirs = "$(DESTDIR)$(libcoredir)"
 LTLIBRARIES = $(libcore_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 am_libcore_la_OBJECTS = dns.lo bandbi.lo cache.lo channel.lo class.lo \
-	client.lo getopt.lo hash.lo hook.lo hostmask.lo ircd.lo \
+	client.lo cloak.lo getopt.lo hash.lo hook.lo hostmask.lo ircd.lo \
 	ircd_signal.lo listener.lo match.lo modules.lo monitor.lo \
 	newconf.lo numeric.lo operhash.lo packet.lo parse.lo reject.lo \
 	restart.lo s_auth.lo s_conf.lo s_newconf.lo s_log.lo s_serv.lo \
@@ -435,6 +435,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/channel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/class.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cloak.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dns.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hash.Plo@am__quote@
