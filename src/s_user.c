@@ -470,7 +470,23 @@ register_local_user(struct Client *client_p, struct Client *source_p, const char
 	 * marked cloak_exempt, is left as the administrator configured it.
 	 */
 	if(!IsConfDoSpoofIp(aconf) && !IsConfExemptCloak(aconf))
-		cloak_client(source_p);
+	{
+		if(!cloak_client(source_p) && ConfigFileEntry.cloak_enabled)
+		{
+			/* Cloaking is switched on but could not be applied - a rehash
+			 * introduced a bad key, most likely. Admitting this user with
+			 * their real host on display is the precise outcome the setting
+			 * exists to prevent, so turn them away instead. Noisy and
+			 * obvious beats quietly exposing people.
+			 */
+			ilog(L_MAIN, "cloak: refusing %s[%s@%s] - cloaking enabled but unavailable",
+			     source_p->name, source_p->username, source_p->sockhost);
+			ServerStats.is_ref++;
+			exit_client(client_p, source_p, &me,
+				    "Host cloaking is unavailable - please try again later");
+			return (CLIENT_EXITED);
+		}
+	}
 
 	rb_inet_ntop_sock((struct sockaddr *)&source_p->localClient->ip, ipaddr, sizeof(ipaddr));
 

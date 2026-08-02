@@ -2402,7 +2402,10 @@ static struct conf_items conf_general_table[] =
 	{ "default_adminstring",CF_QSTRING, NULL, REALLEN,    &ConfigFileEntry.default_adminstring },
 	{ "kline_reason",	CF_QSTRING, NULL, REALLEN, &ConfigFileEntry.kline_reason },
 	{ "cloak_enabled",	CF_YESNO,  NULL, 0,	    &ConfigFileEntry.cloak_enabled },
-	{ "cloak_key",		CF_QSTRING, NULL, REALLEN,  &ConfigFileEntry.cloak_key },
+	/* len 0 means "do not truncate". REALLEN would silently clip the key at
+	 * 49 characters, so a pasted 64-char random key would be quietly cut.
+	 */
+	{ "cloak_key",		CF_QSTRING, NULL, 0,	    &ConfigFileEntry.cloak_key },
 	{ "cloak_suffix",	CF_QSTRING, NULL, HOSTLEN,  &ConfigFileEntry.cloak_suffix },
 
 	{ "anti_spam_exit_message_time", CF_TIME,  NULL, 0, &ConfigFileEntry.anti_spam_exit_message_time },

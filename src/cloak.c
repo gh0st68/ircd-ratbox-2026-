@@ -75,6 +75,19 @@ struct sha256_ctx
 	size_t buflen;
 };
 
+/* Wiping key material with a plain memset() does not work: the compiler can
+ * see the buffer is dead afterwards and drops the store entirely. Routing the
+ * call through a volatile pointer denies it that, since it can no longer prove
+ * what is being called.
+ */
+static void *(*const volatile cloak_memset)(void *, int, size_t) = memset;
+
+static void
+cloak_erase(void *p, size_t len)
+{
+	cloak_memset(p, 0, len);
+}
+
 #define ROTR32(x, n)	(((x) >> (n)) | ((x) << (32 - (n))))
 #define SHA_CH(x, y, z)	(((x) & (y)) ^ (~(x) & (z)))
 #define SHA_MAJ(x, y, z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
@@ -163,6 +176,12 @@ sha256_transform(struct sha256_ctx *ctx, const uint8_t *block)
 	ctx->state[5] += f;
 	ctx->state[6] += g;
 	ctx->state[7] += h;
+
+	/* w[0..15] of the first HMAC block is the key XOR 0x36, which is
+	 * trivially reversible, so this schedule is key material too. Wiping it
+	 * in hmac_sha256() is not possible - it lives in this frame.
+	 */
+	cloak_erase(w, sizeof(w));
 }
 
 static void
@@ -258,11 +277,11 @@ hmac_sha256(const void *keyp, size_t keylen, const void *msg, size_t msglen, uin
 	sha256_update(&ctx, inner, sizeof(inner));
 	sha256_final(&ctx, out);
 
-	memset(key, 0, sizeof(key));
-	memset(ipad, 0, sizeof(ipad));
-	memset(opad, 0, sizeof(opad));
-	memset(inner, 0, sizeof(inner));
-	memset(&ctx, 0, sizeof(ctx));
+	cloak_erase(key, sizeof(key));
+	cloak_erase(ipad, sizeof(ipad));
+	cloak_erase(opad, sizeof(opad));
+	cloak_erase(inner, sizeof(inner));
+	cloak_erase(&ctx, sizeof(ctx));
 }
 
 /* ------------------------------------------------------------------------
@@ -291,14 +310,19 @@ cloak_apply_config(void)
 	const char *key = ConfigFileEntry.cloak_key;
 	const char *suffix = ConfigFileEntry.cloak_suffix;
 	const char *problem = NULL;
+	char *newkey, *newsuffix;
 	char probe[HOSTLEN + 1];
 
 	/* clear_out_old_conf() drops this on every rehash and set_default_conf()
 	 * only runs at startup, so own the fallback here rather than depending
 	 * on a default that will not survive the first REHASH.
+	 *
+	 * Prefer the suffix already in use over the built-in default: dropping
+	 * back to "cloak" mid-run would re-cloak every new user under a
+	 * different name and quietly break existing cloak bans.
 	 */
 	if(EmptyString(suffix))
-		suffix = "cloak";
+		suffix = (cloak_suffix != NULL) ? cloak_suffix : "cloak";
 
 	if(!ConfigFileEntry.cloak_enabled)
 	{
@@ -329,29 +353,49 @@ cloak_apply_config(void)
 
 	if(problem != NULL)
 	{
-		if(cloak_active)
+		/* Test for a usable key we are still holding, NOT for whether we
+		 * happen to be cloaking right now. Those differ after cloaking has
+		 * been switched off and back on again, and testing the wrong one
+		 * throws away a perfectly good key and starts admitting users with
+		 * their real hosts showing.
+		 */
+		if(cloak_key != NULL)
 		{
-			/* Rehash with a bad key: say so loudly and carry on with
-			 * what we had. Falling back to no cloak here would strip
-			 * every subsequent user.
-			 */
 			ilog(L_MAIN, "cloak: %s - keeping the previous settings", problem);
 			sendto_realops_flags(UMODE_ALL, L_ALL,
 					     "cloak: %s - keeping the previous settings",
 					     problem);
+			cloak_active = 1;
+			cloak_wanted_but_unusable = 0;
 		}
 		else
 		{
+			/* Nothing to fall back to. Say so on the way out as well as in
+			 * the log: on a running server register_local_user() will now
+			 * be turning users away, and the operator who typed REHASH
+			 * needs to know why.
+			 */
 			ilog(L_MAIN, "cloak: %s - cloaking cannot be enabled", problem);
+			sendto_realops_flags(UMODE_ALL, L_ALL,
+					     "cloak: %s - cloaking is UNAVAILABLE and clients "
+					     "will be refused until this is fixed", problem);
+			cloak_active = 0;
 			cloak_wanted_but_unusable = 1;
 		}
 		return;
 	}
 
+	/* Copy before releasing: suffix may still be pointing at cloak_suffix. */
+	newkey = rb_strdup(key);
+	newsuffix = rb_strdup(suffix);
+
+	if(cloak_key != NULL)
+		cloak_erase(cloak_key, strlen(cloak_key));
 	rb_free(cloak_key);
 	rb_free(cloak_suffix);
-	cloak_key = rb_strdup(key);
-	cloak_suffix = rb_strdup(suffix);
+
+	cloak_key = newkey;
+	cloak_suffix = newsuffix;
 	cloak_active = 1;
 	cloak_wanted_but_unusable = 0;
 }
@@ -366,13 +410,19 @@ cloak_label(const char *input, char *out, size_t nchars)
 	uint8_t mac[32];
 	size_t i;
 
+	/* Two hex characters per byte, so anything past 64 would read off the
+	 * end of mac[]. Unreachable with the current label widths; here so that
+	 * widening them fails loudly instead of silently over-reading.
+	 */
+	s_assert(nchars <= sizeof(mac) * 2);
+
 	hmac_sha256(cloak_key, strlen(cloak_key), input, strlen(input), mac);
 
 	for(i = 0; i < nchars; i++)
 		out[i] = hexdigits[(i & 1) ? (mac[i / 2] & 0x0f) : (mac[i / 2] >> 4)];
 
 	out[nchars] = '\0';
-	memset(mac, 0, sizeof(mac));
+	cloak_erase(mac, sizeof(mac));
 }
 
 #ifdef RB_IPV6
