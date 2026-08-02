@@ -1,0 +1,43 @@
+# build artifacts
+*.o
+*.lo
+*.la
+*.so
+*.a
+.libs/
+.deps/
+Makefile
+!Makefile.am
+!Makefile.in
+config.status
+config.log
+config.cache
+libtool
+stamp-h1
+autom4te.cache/
+
+# generated headers
+include/setup.h
+include/librb-config.h
+libratbox/include/librb-config.h
+
+# built binaries
+/ircd
+/ssld/ssld
+/bandb/bandb
+/bandb/bantool
+/resolver/resolver
+/tools/mkpasswd
+/tools/ratbox-mkpasswd
+
+# runtime / local state
+*.db
+*.pid
+logs/
+etc/ircd.conf
+etc/*.pem
+etc/*.key
+
+# push helpers holding tokens - never commit these
+push-to-github.sh
+upload-to-github.sh
