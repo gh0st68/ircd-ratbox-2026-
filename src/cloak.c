@@ -538,6 +538,14 @@ cloak_client(struct Client *client_p)
 	if(!cloak_make(client_p, newhost, sizeof(newhost)))
 		return 0;
 
+	/* Hang on to a resolved name before we overwrite it, so operators can
+	 * still be told where somebody actually is. No point keeping it when it
+	 * is just the address again - sockhost already has that.
+	 */
+	if(client_p->localClient->orighost == NULL &&
+	   irccmp(client_p->host, client_p->sockhost) != 0)
+		client_p->localClient->orighost = rb_strdup(client_p->host);
+
 	rb_strlcpy(client_p->host, newhost, sizeof(client_p->host));
 
 	/* IPSpoof marks the address as concealed: the real IP goes out to other

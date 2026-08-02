@@ -164,6 +164,13 @@ struct LocalUser
 	char *opername;
 	char *fullcaps;
 
+	/* The host this client had before cloaking replaced it. Only set when a
+	 * cloak was applied AND the original was a resolved name rather than
+	 * just the address, since the address is already kept in sockhost.
+	 * Operators are shown this; nobody else ever sees it.
+	 */
+	char *orighost;
+
 	int caps;		/* capabilities bit-field */
 	rb_fde_t *F;
 

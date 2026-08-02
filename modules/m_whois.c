@@ -326,9 +326,22 @@ single_whois(struct Client *source_p, struct Client *target_p, int operspy)
 					   form_str(RPL_WHOISSECURE), target_p->name);
 
 		if(ConfigFileEntry.use_whois_actually && show_ip(source_p, target_p))
+		{
+			/* For a cloaked client the address alone is often not what an
+			 * operator wants; show the name it resolved to as well, when
+			 * there was one. Sent as a second line rather than folded into
+			 * the first so clients that parse this numeric keep working.
+			 */
+			if(MyConnect(target_p) && target_p->localClient->orighost != NULL)
+				sendto_one_numeric(source_p, RPL_WHOISACTUALLY,
+						   form_str(RPL_WHOISACTUALLY),
+						   target_p->name,
+						   target_p->localClient->orighost);
+
 			sendto_one_numeric(source_p, RPL_WHOISACTUALLY,
 					   form_str(RPL_WHOISACTUALLY),
 					   target_p->name, target_p->sockhost);
+		}
 
 		sendto_one_numeric(source_p, RPL_WHOISIDLE, form_str(RPL_WHOISIDLE),
 				   target_p->name,
