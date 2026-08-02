@@ -480,11 +480,16 @@ cloak_client(struct Client *client_p)
 
 	rb_strlcpy(client_p->host, newhost, sizeof(client_p->host));
 
-	/* Marks the address as concealed. Two things follow from it: the real
-	 * IP goes out to other servers as "0" (see send_umode/introduce paths),
-	 * and show_ip() gates who is allowed to see it locally.
+	/* IPSpoof marks the address as concealed: the real IP goes out to other
+	 * servers as "0" (see the UID/NICK introduce paths in s_user.c), so it
+	 * never leaves this server.
+	 *
+	 * CLOAKED additionally distinguishes us from an administrator-configured
+	 * spoof, which lets show_ip() keep showing the real address to local
+	 * operators even when hide_spoof_ips is on.
 	 */
 	SetIPSpoof(client_p);
+	SetCloaked(client_p);
 
 	return 1;
 }

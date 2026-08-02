@@ -1560,6 +1560,22 @@ show_ip(struct Client *source_p, struct Client *target_p)
 	{
 		return 0;
 	}
+	else if(IsCloaked(target_p))
+	{
+		/* Cloaking exists to hide a user's address from other USERS, not
+		 * from staff. Operators always get the real address, regardless of
+		 * hide_spoof_ips -- that setting governs administrator-configured
+		 * spoofs, where hiding the truth from opers is sometimes the point.
+		 * Without this, switching cloaking on would silently blind every
+		 * oper on the server.
+		 *
+		 * source == NULL means the message is going to local opers.
+		 */
+		if(source_p == NULL || MyOper(source_p))
+			return 1;
+
+		return 0;
+	}
 	else if(IsIPSpoof(target_p))
 	{
 		/* source == NULL indicates message is being sent

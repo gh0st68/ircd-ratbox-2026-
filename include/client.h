@@ -146,6 +146,7 @@ struct LocalUser;
 #define FLAGS_EXEMPTSPAMBOT	0x01000000
 #define FLAGS_EXEMPTSHIDE	0x02000000
 #define FLAGS_EXEMPTJUPE	0x04000000
+#define FLAGS_CLOAKED		0x08000000	/* host replaced by a cloak */
 
 /* flags for local clients, this needs stuff moved from above to here at some point */
 #define LFLAGS_SSL		0x00000001
@@ -299,6 +300,8 @@ struct LocalUser;
 #define SetExemptResv(x)	((x)->flags |= FLAGS_EXEMPTRESV)
 #define IsIPSpoof(x)            ((x)->flags & FLAGS_IP_SPOOFING)
 #define SetIPSpoof(x)           ((x)->flags |= FLAGS_IP_SPOOFING)
+#define IsCloaked(x)            ((x)->flags & FLAGS_CLOAKED)
+#define SetCloaked(x)           ((x)->flags |= FLAGS_CLOAKED)
 
 #define SetIdlelined(x)         ((x)->flags |= FLAGS_IDLE_LINED)
 #define IsIdlelined(x)          ((x)->flags & FLAGS_IDLE_LINED)
