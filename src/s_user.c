@@ -37,6 +37,7 @@
 #include "parse.h"
 #include "numeric.h"
 #include "s_conf.h"
+#include "hostmask.h"
 #include "cloak.h"
 #include "s_newconf.h"
 #include "s_log.h"
@@ -485,6 +486,24 @@ register_local_user(struct Client *client_p, struct Client *source_p, const char
 			exit_client(client_p, source_p, &me,
 				    "Host cloaking is unavailable - please try again later");
 			return (CLIENT_EXITED);
+		}
+
+		/* Bans have to be matched a second time now that the cloak is the
+		 * user's host. check_client() ran before the cloak existed and only
+		 * ever saw the real host, so without this a K-line written against
+		 * a cloak mask kills whoever is online but does nothing to stop
+		 * them reconnecting -- which is precisely what the nested cloak
+		 * labels are advertised as being for.
+		 */
+		if(IsCloaked(source_p) && !IsExemptKline(source_p))
+		{
+			struct ConfItem *kconf = find_kline(source_p);
+
+			if(kconf != NULL)
+			{
+				notify_banned_client(source_p, kconf, K_LINED);
+				return (CLIENT_EXITED);
+			}
 		}
 	}
 

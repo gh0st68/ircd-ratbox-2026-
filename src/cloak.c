@@ -449,13 +449,12 @@ cloak_v6_prefix(char *buf, size_t buflen, const uint8_t *addr, size_t nbytes)
 #endif
 
 int
-cloak_client(struct Client *client_p)
+cloak_make(struct Client *client_p, char *newhost, size_t newhostlen)
 {
 	char user[CLOAK_LEN_USER + 1];
 	char net[CLOAK_LEN_NET + 1];
 	char top[CLOAK_LEN_NET + 1];
 	char input[128];
-	char newhost[HOSTLEN + 1];
 
 	if(!cloak_active || client_p->localClient == NULL)
 		return 0;
@@ -516,7 +515,7 @@ cloak_client(struct Client *client_p)
 		break;
 	}
 
-	rb_snprintf(newhost, sizeof(newhost), "%s.%s.%s.%s", user, net, top, cloak_suffix);
+	rb_snprintf(newhost, newhostlen, "%s.%s.%s.%s", user, net, top, cloak_suffix);
 
 	/* cloak_apply_config() already proved this shape is legal, so a failure
 	 * here means something is badly wrong. Refuse rather than install a
@@ -527,6 +526,17 @@ cloak_client(struct Client *client_p)
 		ilog(L_MAIN, "cloak: refusing to apply malformed cloak '%s'", newhost);
 		return 0;
 	}
+
+	return 1;
+}
+
+int
+cloak_client(struct Client *client_p)
+{
+	char newhost[HOSTLEN + 1];
+
+	if(!cloak_make(client_p, newhost, sizeof(newhost)))
+		return 0;
 
 	rb_strlcpy(client_p->host, newhost, sizeof(client_p->host));
 

@@ -52,6 +52,14 @@ void cloak_apply_config(void);
  */
 int cloak_is_broken(void);
 
+/* Work out what client_p's cloak will be, without applying it. The result is
+ * derived purely from their address, so this may be called before the cloak
+ * is installed and will agree with what cloak_client() later produces.
+ * Callers that need to look a client up by the host they will eventually be
+ * known under -- clone counting, for one -- need this. Returns 1 on success.
+ */
+int cloak_make(struct Client *client_p, char *buf, size_t buflen);
+
 /* Replace client_p->host with its cloak. Returns 1 if the host was changed. */
 int cloak_client(struct Client *client_p);
 

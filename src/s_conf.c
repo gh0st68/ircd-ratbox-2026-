@@ -28,6 +28,7 @@
 #include "struct.h"
 #include "s_conf.h"
 #include "s_newconf.h"
+#include "cloak.h"
 #include "s_serv.h"
 #include "s_stats.h"
 #include "channel.h"
@@ -482,6 +483,8 @@ attach_iline(struct Client *client_p, struct ConfItem *aconf)
 {
 	struct Client *target_p;
 	rb_dlink_node *ptr;
+	const char *lookup_host;
+	char cloakbuf[HOSTLEN + 1];
 	int local_count = 0;
 	int global_count = 0;
 	int ident_count = 0;
@@ -493,12 +496,22 @@ attach_iline(struct Client *client_p, struct ConfItem *aconf)
 	if(*client_p->username == '~')
 		unidented = 1;
 
+	/* Registered clients are in the hostname hash under the host they ended
+	 * up with, which for a cloaked user is their cloak. We run before the
+	 * cloak is applied, so looking ourselves up by the real host would find
+	 * nobody and silently turn every per-host clone limit into a no-op.
+	 * The cloak depends only on the address, so we can work out ours now.
+	 */
+	lookup_host = client_p->host;
+	if(cloak_make(client_p, cloakbuf, sizeof(cloakbuf)))
+		lookup_host = cloakbuf;
+
 	/* find_hostname() returns the head of the list to search */
-	RB_DLINK_FOREACH(ptr, find_hostname(client_p->host))
+	RB_DLINK_FOREACH(ptr, find_hostname(lookup_host))
 	{
 		target_p = ptr->data;
 
-		if(irccmp(client_p->host, target_p->host) != 0)
+		if(irccmp(lookup_host, target_p->host) != 0)
 			continue;
 
 		if(MyConnect(target_p))
